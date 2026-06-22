@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+# General Rules
+
+- Only include comments if a human would include them. This means only including comments outside of docs if it is needed to explain why something is the way it is (ie. condition unclear from code).
+- Include docs for all functions where it is not obvious what it does by name alone. For more complicated and important functions, include preconditions as well as parameter descriptions as well.
+- Do not write mega functions that do everything at the same time, more separation is better
+- Prioritize scalability of the project but do not overengineer file structure.
+- If you ever get stuck on something, stop generating and report it.
+
+Keep your report to the point highlighting your main changes. Try to keep your summary under 6 sentences (bullet points and tables are fine) unless absolutely necessary. If there are special cases that you addressed, bring those up as well.

@@ -1,0 +1,7 @@
+ANSI = {
+    "CORE_DEBUG_COLOUR": "\033[91m",
+    "LLM_DEBUG_COLOUR": "\033[94m",
+    "PLATFORM_DEBUG_COLOUR": "\033[95m",
+    "BEHAVIOUR_DEBUG_COLOUR": "\033[92m",
+    "ANSI_RESET": "\033[0m",
+}

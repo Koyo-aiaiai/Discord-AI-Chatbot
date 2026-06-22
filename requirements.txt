@@ -1,0 +1,11 @@
+pydantic
+discord.py
+python-dotenv
+langgraph
+langchain-core
+transformers
+torch
+torchvision
+accelerate
+bitsandbytes
+chromadb

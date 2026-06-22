@@ -1,0 +1,42 @@
+[project]
+name = "Discord-AI-Chatbot"
+version = "0.1.0"
+description = "Dumb Idiot AI"
+requires-python = ">=3.11"
+dependencies = [
+    "discord.py>=2.4.0",
+    "redis>=5.0.0",
+    "langgraph>=0.2.40",
+    "langchain-core>=0.3.0",
+    "transformers>=4.45.0",
+    "torch>=2.4.0",
+    "accelerate>=1.0.0",
+    "bitsandbytes>=0.43.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.5.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "pytest-asyncio>=0.23.0", "fakeredis>=2.23.0"]
+
+[project.scripts]
+contingency-plan = "main:run"
+contingency-llm = "llm.__main__:run"
+contingency-discord = "discord_bot.__main__:run"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["core*", "llm*", "discord_bot*", "behaviour*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["src"]
+python_files = ["test_*.py"]
