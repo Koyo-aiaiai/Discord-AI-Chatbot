@@ -6,9 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.store.memory import InMemoryStore
 from langmem import (
-    create_manage_memory_tool,
-    create_memory_manager,
-    create_search_memory_tool,
+    create_memory_store_manager,
 )
 
 from constants import ANSI
@@ -25,11 +23,11 @@ llm_factory = LLMFactory()
 model = llm_factory.make_model()
 # memory_store = MemoryStore()
 memory_store = InMemoryStore()
-memory_manager = create_memory_manager(
+memory_manager = create_memory_store_manager(
     model,
+    namespace=("memories", "{channel_id}", "{user_id}"),
     instructions=(memory_instructions),
     enable_inserts=True,
-    enable_updates=True,
     enable_deletes=True,
 )
 
@@ -46,7 +44,8 @@ def build_context(state: OverallState) -> OverallState:
 def retrieve_memory(state: OverallState) -> OverallState:
     # TODO: This should eventually use semantic search
     user_id = state["user_name"]
-    memory_context = memory_store.search(namespace=user_id, query="", limit=20)
+    namespace = (state["metadata"].channel_id, user_id)
+    memory_context = memory_store.search(namespace, query="", limit=20)
     return {"memory_context": memory_context}
 
 
@@ -59,7 +58,6 @@ def generate_response(state: OverallState) -> OverallState:
             )
         )
     prompt.extend(state["messages"])
-    print(prompt)
     response = model.invoke(prompt)
     return {
         "metadata": state["metadata"],
@@ -103,28 +101,20 @@ def validate_response(state: OverallState) -> OverallState:
 
 
 def store_memory(state: OverallState) -> OverallState:
-    namespace = state["user_name"]
-
-    existing_items = memory_store.search(namespace=namespace, query="", limit=200)
-    existing = [
-        {"id": item.key, "content": item.value["content"]} for item in existing_items
-    ]
-
-    ops = memory_manager.invoke(
-        {
-            "messages": state["messages"],
-            "existing": existing,
-        }
+    to_process = {
+        "messages": [
+            {"role": "user", "content": state["messages"][-1].content},
+        ],
+    }
+    memory_manager.invoke(
+        to_process,
+        config={
+            "configurable": {
+                "user_id": state["metadata"].user_id,
+                "channel_id": state["metadata"].channel_id,
+            }
+        },
     )
-
-    for op in ops:
-        op_type = op.get("type", "").lower()
-
-        if op_type in ("insert", "update"):
-            key = op.get("id") or str(uuid.uuid4())
-            memory_store.put(namespace, key, {"content": op["content"]})
-        elif op_type == "delete" and op.get("id"):
-            memory_store.delete(namespace, op["id"])
 
     return {}
 
@@ -156,4 +146,4 @@ builder.add_conditional_edges(
     },
 )
 builder.add_edge("store_memory", END)
-graph = builder.compile()
+graph = builder.compile(store=memory_store)
