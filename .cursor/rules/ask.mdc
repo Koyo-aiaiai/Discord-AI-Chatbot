@@ -1,5 +1,6 @@
 ---
-alwaysApply: true
+alwaysApply: false
+description: "for when the user is asking a question"
 ---
 # Rules for when user is asking question
 
