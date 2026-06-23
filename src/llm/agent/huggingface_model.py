@@ -1,9 +1,12 @@
-from typing import Any, List, Optional
+import copy
+from typing import Any, List, Optional, Sequence, Union
 
 import torch
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 
@@ -12,8 +15,9 @@ class HuggingFaceModel(BaseChatModel):
 
     _model_path: str
     _base_model_name: str
-    _model: Any # Some sort of LLM model
-    _tokenizer: Any # Some sort of tokenizer
+    _model: Any  # Some sort of LLM model
+    _tokenizer: Any  # Some sort of tokenizer
+    tools: list = []
 
     def __init__(self, model_path: str, base_model_name: str, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -35,7 +39,7 @@ class HuggingFaceModel(BaseChatModel):
             device_map="auto",
         )
 
-        print("\033[1;35m [ Model loaded: Azaria is now Online! ] \033[0m")
+        print("\033[1;35m [ Azaria is now Online! ] \033[0m")
 
     @property
     def _llm_type(self) -> str:
@@ -53,7 +57,11 @@ class HuggingFaceModel(BaseChatModel):
             config = run_manager.config.get("configurable", {})
 
         message_dicts = [
-            {"role": m.type.replace("human", "user").replace("ai", "assistant"), "content": m.content} for m in messages
+            {
+                "role": m.type.replace("human", "user").replace("ai", "assistant"),
+                "content": m.content,
+            }
+            for m in messages
         ]
 
         prompt_text = self._tokenizer.apply_chat_template(
@@ -62,7 +70,9 @@ class HuggingFaceModel(BaseChatModel):
             add_generation_prompt=True,
             enable_thinking=False,
         )
-        inputs = self._tokenizer(prompt_text, max_length=4096, return_tensors="pt").to(self._model.device)
+        inputs = self._tokenizer(prompt_text, max_length=4096, return_tensors="pt").to(
+            self._model.device
+        )
 
         with torch.no_grad():
             output_ids = self._model.generate(
@@ -74,9 +84,19 @@ class HuggingFaceModel(BaseChatModel):
                 max_new_tokens=config.get("max_new_tokens", 100),
             )
 
-        new_tokens = output_ids[0][inputs["input_ids"].shape[1]:]
+        new_tokens = output_ids[0][inputs["input_ids"].shape[1] :]
         response = self._tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
         generation = ChatGeneration(message=AIMessage(content=response))
 
         return ChatResult(generations=[generation])
+
+    def bind_tools(
+        self, tools: Sequence[Union[BaseTool, dict]], **kwargs
+    ) -> "HuggingFaceModel":
+        formatted_tools = [
+            convert_to_openai_tool(t) if isinstance(t, BaseTool) else t for t in tools
+        ]
+        # Return a copy of self with tools attached
+        new_model = self.copy(update={"tools": formatted_tools})
+        return new_model
