@@ -41,8 +41,6 @@ class DiscordBot(commands.Bot):
                 )
                 return
 
-        print(channel)
-        print(type(channel))
         if isinstance(channel, discord.DMChannel):
             self.dm_channels[channel.recipient.id] = channel
         elif isinstance(channel, discord.TextChannel):
