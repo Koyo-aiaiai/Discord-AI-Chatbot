@@ -43,9 +43,17 @@ def build_context(state: OverallState) -> OverallState:
 
 def retrieve_memory(state: OverallState) -> OverallState:
     # TODO: This should eventually use semantic search
-    user_id = state["user_name"]
-    namespace = (state["metadata"].channel_id, user_id)
-    memory_context = memory_store.search(namespace, query="", limit=20)
+    user_message = state["messages"][-1].content
+    memory_context = memory_manager.search(
+        query=user_message,
+        config={
+            "configurable": {
+                "user_id": state["metadata"].user_id,
+                "channel_id": state["metadata"].channel_id,
+            }
+        },
+    )
+    print(f"Memory context: {memory_context}")
     return {"memory_context": memory_context}
 
 
@@ -103,16 +111,22 @@ def validate_response(state: OverallState) -> OverallState:
 def store_memory(state: OverallState) -> OverallState:
     to_process = {
         "messages": [
-            {"role": "user", "content": state["messages"][-1].content},
+            # FIXME: If there is need to retry, this will add the retry message rather than the user's message
+            {"role": "user", "content": state["messages"][-2].content},
+        ]
+        + [
+            {"role": "assistant", "content": message}
+            for message in state["parsed_messages"]
         ],
     }
     memory_manager.invoke(
-        to_process,
+        input=to_process,
         config={
             "configurable": {
                 "user_id": state["metadata"].user_id,
                 "channel_id": state["metadata"].channel_id,
-            }
+            },
+            "recursion_limit": 10,
         },
     )
 
