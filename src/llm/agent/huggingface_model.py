@@ -135,33 +135,26 @@ class HuggingFaceModel(BaseChatModel):
             config = run_manager.config.get("configurable", {})
 
         message_dicts = [_message_to_dict(m) for m in messages]
-        print("Step 1")
 
         tools = kwargs.get("tools", [])
-        print("Step 2")
 
         template_kwargs: dict[str, Any] = {
             "tokenize": False,
             "add_generation_prompt": True,
             "enable_thinking": False,
         }
-        print("Step 3")
 
         if tools:
             template_kwargs["tools"] = tools
-        print("Step 4")
 
-        print(template_kwargs)
-        print(message_dicts)
         prompt_text = self._tokenizer.apply_chat_template(
             message_dicts,
             **template_kwargs,
         )
-        print("Step 5")
+
         inputs = self._tokenizer(prompt_text, max_length=4096, return_tensors="pt").to(
             self._model.device
         )
-        print("Step 6")
 
         with torch.no_grad():
             output_ids = self._model.generate(
@@ -173,21 +166,16 @@ class HuggingFaceModel(BaseChatModel):
                 max_new_tokens=config.get("max_new_tokens", 1024),
             )
 
-        print("Step 7")
         new_tokens = output_ids[0][inputs["input_ids"].shape[1] :]
-        print("Step 8")
         response = self._tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
-        print("Step 9")
 
         content, tool_calls = _parse_tool_calls(response)
-        print("Step 10")
         generation = ChatGeneration(
             message=AIMessage(
                 content=content or ("" if tool_calls else response),
                 tool_calls=tool_calls,
             )
         )
-        print("Step 11")
 
         return ChatResult(generations=[generation])
 

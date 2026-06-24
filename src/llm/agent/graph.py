@@ -50,7 +50,8 @@ def retrieve_memory(state: OverallState) -> OverallState:
             "configurable": {
                 "user_id": state["metadata"].user_id,
                 "channel_id": state["metadata"].channel_id,
-            }
+            },
+            "limit": 20,
         },
     )
     print(f"Memory context: {memory_context}")
