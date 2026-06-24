@@ -12,8 +12,8 @@ class DiscordTextCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
-        """Listen for user DMs and forward them to the Discord service."""
-        if message.author == self.bot.user or not isinstance(message.channel, discord.DMChannel):
+        """Listen for messages in any channel that the bot can see. Sends messages to the Discord service."""
+        if message.author == self.bot.user:
             return
 
         if not message.content or self.bot.service is None:

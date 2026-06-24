@@ -3,6 +3,7 @@ discord.py
 python-dotenv
 langgraph
 langchain-core
+lang-mem
 transformers
 torch
 torchvision

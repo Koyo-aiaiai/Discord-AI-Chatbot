@@ -21,7 +21,7 @@ class DiscordBot(commands.Bot):
         intents.message_content = True
         super().__init__(command_prefix="!", intents=intents)
         self.service = service
-        self.dm_channels: dict[int, discord.DMChannel] = {}
+        self.channels: dict[str, discord.TextChannel] = {}
 
     async def setup_hook(self) -> None:
         await self.load_extension("adapters.discord_bot.cogs.text_cog")
@@ -43,8 +43,14 @@ class DiscordBot(commands.Bot):
 
         if isinstance(channel, discord.DMChannel):
             self.dm_channels[channel.recipient.id] = channel
+        elif isinstance(channel, discord.TextChannel):
+            self.channels[channel.id] = channel
 
-        content_len = len(content)
-        async with channel.typing():
-            await asyncio.sleep(content_len / 15)
-            await channel.send(content)
+        if isinstance(channel, discord.DMChannel):
+            async with channel.typing():
+                await asyncio.sleep(len(content) / 15)
+                await channel.send(content)
+        elif isinstance(channel, discord.TextChannel):
+            async with channel.typing():
+                await asyncio.sleep(len(content) / 15)
+                await channel.send(content)

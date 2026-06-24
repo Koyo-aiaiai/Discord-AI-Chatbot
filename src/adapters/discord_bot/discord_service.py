@@ -24,6 +24,7 @@ class DiscordService(AbstractService):
     Entry and Exit point for the communication between AI and user through Discord.
     Listens for AIMessage and publishes UserMessage.
     """
+
     def __init__(self, bus: EventBus):
         super().__init__(bus)
 
@@ -66,9 +67,7 @@ class DiscordService(AbstractService):
         self._get_channel_times(channel_id)["ai"] = now
 
     async def handle_discord_message(self, message: discord.Message) -> None:
-        """Pack a Discord DM as a UserMessage and publish it to the event bus."""
-        if not isinstance(message.channel, discord.DMChannel):
-            return
+        """Pack a Discord message as a UserMessage and publish it to the event bus."""
 
         now = message.created_at
         if now.tzinfo is None:
@@ -86,7 +85,7 @@ class DiscordService(AbstractService):
         self._record_user_message(channel_id, now)
 
         if self.bot is not None:
-            self.bot.dm_channels[message.author.id] = message.channel
+            self.bot.channels[channel_id] = message.channel
 
         logger.info(
             f"{ANSI['PLATFORM_DEBUG_COLOUR']}Publishing UserMessage from user {user_id}{ANSI['ANSI_RESET']}"
@@ -97,7 +96,9 @@ class DiscordService(AbstractService):
         while True:
             ai_message = await self.queue.get()
             if self.bot is None:
-                logger.warning("Received AIMessage before Discord bot was ready, dropping")
+                logger.warning(
+                    "Received AIMessage before Discord bot was ready, dropping"
+                )
                 continue
 
             channel_id = ai_message.metadata.channel_id
