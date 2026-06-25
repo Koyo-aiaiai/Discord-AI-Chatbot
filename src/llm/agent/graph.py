@@ -1,12 +1,18 @@
 import logging
+import warnings
 from typing import Literal
 
+from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_openai import OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
 from langgraph.store.memory import InMemoryStore
+from langgraph.store.postgres import PostgresStore
 from langmem import (
     create_memory_store_manager,
 )
+from psycopg import Connection
+from psycopg.rows import dict_row
 
 from constants import ANSI
 from llm.agent.llm_factory import LLMFactory
@@ -15,18 +21,18 @@ from llm.agent.states import OverallState
 from llm.agent.utils import LLMOutputValidationError, parse_llm_output
 from llm.constants import MAX_RETRIES
 
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+DATABASE_URL = "postgresql://agent:fishfosh@localhost:5432/agent_memory"
+
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
 llm_factory = LLMFactory()
 model = llm_factory.make_model()
-memory_store = InMemoryStore()
-memory_manager = create_memory_store_manager(
-    model,
-    namespace=("memories", "{channel_id}", "{user_id}"),
-    instructions=(memory_instructions),
-    enable_inserts=True,
-    enable_deletes=True,
-)
+# embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+# memory_store = InMemoryStore()
 
 _FALLBACK_MESSAGE = "I am going to fucking explode"
 
@@ -138,6 +144,27 @@ def route_after_validation(
         return "store_memory"
     return "generate_response"
 
+
+conn = Connection.connect(
+    DATABASE_URL,
+    autocommit=True,
+    prepare_threshold=0,
+    row_factory=dict_row,
+)
+
+memory_store = PostgresStore(conn)
+
+# NOTE: THIS IS FOR FIRST RUN TO SETUP POSTGRES VECTOR DB
+memory_store.setup()
+
+
+memory_manager = create_memory_store_manager(
+    model,
+    namespace=("memories", "{channel_id}", "{user_id}"),
+    instructions=(memory_instructions),
+    enable_inserts=True,
+    enable_deletes=True,
+)
 
 builder = StateGraph(OverallState)
 builder.add_node("build_context", build_context)
