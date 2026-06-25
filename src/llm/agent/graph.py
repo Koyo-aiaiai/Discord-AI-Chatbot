@@ -1,5 +1,4 @@
 import logging
-import uuid
 from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -11,7 +10,6 @@ from langmem import (
 
 from constants import ANSI
 from llm.agent.llm_factory import LLMFactory
-from llm.agent.memory import MemoryStore
 from llm.agent.prompts import memory_instructions, sys_prompt
 from llm.agent.states import OverallState
 from llm.agent.utils import LLMOutputValidationError, parse_llm_output
@@ -21,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 llm_factory = LLMFactory()
 model = llm_factory.make_model()
-# memory_store = MemoryStore()
 memory_store = InMemoryStore()
 memory_manager = create_memory_store_manager(
     model,
