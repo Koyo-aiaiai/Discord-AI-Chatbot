@@ -1,0 +1,16 @@
+# docker-compose.yml
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: discord_ai_mem_db
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: fishfosh
+      POSTGRES_DB: agent_memory
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  
+volumes:
+  pgdata:

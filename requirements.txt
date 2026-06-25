@@ -2,6 +2,7 @@ pydantic
 discord.py
 python-dotenv
 langgraph
+langgraph-checkpoint-postgres
 langchain-core
 lang-mem
 transformers
@@ -9,4 +10,4 @@ torch
 torchvision
 accelerate
 bitsandbytes
-chromadb
+psycopg2
