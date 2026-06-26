@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 import warnings
 from typing import Literal
@@ -24,13 +25,21 @@ from llm.constants import MAX_RETRIES
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 DATABASE_URL = "postgresql://agent:fishfosh@localhost:5432/agent_memory"
+PERSONALITY_MODEL_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "personality_model_config.json"
+)
+MEMORY_MODEL_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "memory_model_config.json"
+)
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 llm_factory = LLMFactory()
-model = llm_factory.make_model()
+personality_model = llm_factory.make_model(PERSONALITY_MODEL_PATH)
+memory_model = llm_factory.make_model(MEMORY_MODEL_PATH)
+print("\033[1;35m [ Azaria is now Online! ] \033[0m")
 
 _FALLBACK_MESSAGE = "I am going to fucking explode"
 EMBEDDINGS_DIM = 1536
@@ -72,7 +81,7 @@ def generate_response(state: OverallState) -> OverallState:
             )
         )
     prompt.extend(state["messages"])
-    response = model.invoke(prompt)
+    response = personality_model.invoke(prompt)
     end_time = time.time()
     latency = end_time - start_time
     print(
@@ -175,7 +184,7 @@ memory_store.setup()
 
 
 memory_manager = create_memory_store_manager(
-    model,
+    memory_model,
     namespace=("memories", "{channel_id}", "{user_id}"),
     instructions=(memory_instructions),
     enable_inserts=True,

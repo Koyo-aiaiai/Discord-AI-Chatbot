@@ -6,30 +6,34 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from constants import ANSI
 from llm.agent.huggingface_model import HuggingFaceModel
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.json")
-
 
 class LLMFactory:
     def __init__(self):
-        with open(CONFIG_PATH) as f:
-            self.config = json.load(f)
-        self.model_type = self.config["model_type"]
-        self._config_dir = os.path.dirname(CONFIG_PATH)
+        self._config_dir = os.path.join(os.path.dirname(__file__), "..")
 
     def _resolve_path(self, path: str) -> str:
         if os.path.isabs(path):
             return path
         return os.path.join(self._config_dir, path)
 
-    def make_model(self) -> BaseChatModel:
+    def make_model(self, config_path: str) -> BaseChatModel:
         """
         Makes a model based on the config.
         """
-        match self.model_type:
+        with open(config_path) as f:
+            config = json.load(f)
+
+        model_type = config["model_type"]
+        model_name = config["model_name"]
+        model_base = config["base_model_name"]
+
+        model_name = self._resolve_path(model_name)
+
+        match model_type:
             case "huggingface":
                 return HuggingFaceModel(
-                    model_path=self._resolve_path(self.config["model_name"]),
-                    base_model_name=self.config["base_model_name"],
+                    model_path=model_name,
+                    base_model_name=model_base,
                 )
             case _:
                 raise ValueError(

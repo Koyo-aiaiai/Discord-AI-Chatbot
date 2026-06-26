@@ -117,8 +117,6 @@ class HuggingFaceModel(BaseChatModel):
             device_map="auto",
         )
 
-        print("\033[1;35m [ Azaria is now Online! ] \033[0m")
-
     @property
     def _llm_type(self) -> str:
         return "transformers"
