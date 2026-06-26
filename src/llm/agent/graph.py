@@ -1,9 +1,12 @@
 import logging
+import os
+import time
 import warnings
 from typing import Literal
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_openai import OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
 from langgraph.store.postgres import PostgresStore
 from langmem import (
@@ -22,15 +25,26 @@ from llm.constants import MAX_RETRIES
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 DATABASE_URL = "postgresql://agent:fishfosh@localhost:5432/agent_memory"
+PERSONALITY_MODEL_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "personality_model_config.json"
+)
+MEMORY_MODEL_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "memory_model_config.json"
+)
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 llm_factory = LLMFactory()
-model = llm_factory.make_model()
+personality_model = llm_factory.make_model(PERSONALITY_MODEL_PATH)
+memory_model = llm_factory.make_model(MEMORY_MODEL_PATH)
+print("\033[1;35m [ Azaria is now Online! ] \033[0m")
 
 _FALLBACK_MESSAGE = "I am going to fucking explode"
+EMBEDDINGS_DIM = 1536
+
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 
 def build_context(state: OverallState) -> OverallState:
@@ -58,6 +72,7 @@ def retrieve_memory(state: OverallState) -> OverallState:
 
 
 def generate_response(state: OverallState) -> OverallState:
+    start_time = time.time()
     prompt = [SystemMessage(content=sys_prompt.strip())]
     if state.get("memory_context"):
         prompt.append(
@@ -66,7 +81,12 @@ def generate_response(state: OverallState) -> OverallState:
             )
         )
     prompt.extend(state["messages"])
-    response = model.invoke(prompt)
+    response = personality_model.invoke(prompt)
+    end_time = time.time()
+    latency = end_time - start_time
+    print(
+        f"{ANSI['LLM_DEBUG_COLOUR']} Model Generation Latency: {latency} {ANSI['ANSI_RESET']}"
+    )
     return {
         "metadata": state["metadata"],
         "messages": [response],
@@ -109,6 +129,7 @@ def validate_response(state: OverallState) -> OverallState:
 
 
 def store_memory(state: OverallState) -> OverallState:
+    start_time = time.time()
     to_process = {
         "messages": [
             # FIXME: If there is need to retry, this will add the retry message rather than the user's message
@@ -129,6 +150,11 @@ def store_memory(state: OverallState) -> OverallState:
             "recursion_limit": 10,
         },
     )
+    end_time = time.time()
+    latency = end_time - start_time
+    print(
+        f"{ANSI['LLM_DEBUG_COLOUR']} Memory Storage Latency: {latency} {ANSI['ANSI_RESET']}"
+    )
 
     return {}
 
@@ -148,14 +174,17 @@ conn = Connection.connect(
     row_factory=dict_row,
 )
 
-memory_store = PostgresStore(conn)
+memory_store = PostgresStore(
+    conn,
+    index={"dims": EMBEDDINGS_DIM, "embed": embeddings},
+)
 
 # NOTE: THIS IS FOR FIRST RUN TO SETUP POSTGRES VECTOR DB
 memory_store.setup()
 
 
 memory_manager = create_memory_store_manager(
-    model,
+    memory_model,
     namespace=("memories", "{channel_id}", "{user_id}"),
     instructions=(memory_instructions),
     enable_inserts=True,

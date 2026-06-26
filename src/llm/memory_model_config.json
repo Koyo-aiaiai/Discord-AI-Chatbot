@@ -1,0 +1,5 @@
+{
+    "model_type": "huggingface",
+    "model_name": "Qwen/Qwen3.5-0.8B",
+    "base_model_name": "Qwen/Qwen3.5-0.8B"
+}

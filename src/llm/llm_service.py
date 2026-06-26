@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import time
 
+from constants import ANSI
 from core.abstract_service import AbstractService
 from core.bus import EventBus
 from core.events import AIMessage, LLMInputMessage
@@ -24,6 +26,7 @@ class LLMService(AbstractService):
         while True:
             event = await self.queue.get()
 
+            start_time = time.time()
             response = await asyncio.to_thread(
                 graph.invoke,
                 {
@@ -34,10 +37,17 @@ class LLMService(AbstractService):
                     "parsed_messages": [],
                 },
             )
+            end_time = time.time()
+            latency = end_time - start_time
+            print(
+                f"{ANSI['LLM_DEBUG_COLOUR']} Total AI Agent Latency: {latency} {ANSI['ANSI_RESET']}"
+            )
 
             parsed_messages = response.get("parsed_messages", [])
             if not parsed_messages:
-                logger.error("Graph completed without parsed messages, skipping publish")
+                logger.error(
+                    "Graph completed without parsed messages, skipping publish"
+                )
                 continue
 
             for content in parsed_messages:

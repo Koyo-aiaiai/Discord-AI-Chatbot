@@ -17,7 +17,8 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "langmem",
     "langgraph-checkpoint-postgres",
-    "psycopg2"
+    "psycopg2",
+    "langchain-voyageai"
 ]
 
 [project.optional-dependencies]
