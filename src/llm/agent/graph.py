@@ -1,4 +1,5 @@
 import logging
+import time
 import warnings
 from typing import Literal
 
@@ -62,6 +63,7 @@ def retrieve_memory(state: OverallState) -> OverallState:
 
 
 def generate_response(state: OverallState) -> OverallState:
+    start_time = time.time()
     prompt = [SystemMessage(content=sys_prompt.strip())]
     if state.get("memory_context"):
         prompt.append(
@@ -71,6 +73,11 @@ def generate_response(state: OverallState) -> OverallState:
         )
     prompt.extend(state["messages"])
     response = model.invoke(prompt)
+    end_time = time.time()
+    latency = end_time - start_time
+    print(
+        f"{ANSI['LLM_DEBUG_COLOUR']} Model Generation Latency: {latency} {ANSI['ANSI_RESET']}"
+    )
     return {
         "metadata": state["metadata"],
         "messages": [response],
@@ -113,6 +120,7 @@ def validate_response(state: OverallState) -> OverallState:
 
 
 def store_memory(state: OverallState) -> OverallState:
+    start_time = time.time()
     to_process = {
         "messages": [
             # FIXME: If there is need to retry, this will add the retry message rather than the user's message
@@ -132,6 +140,11 @@ def store_memory(state: OverallState) -> OverallState:
             },
             "recursion_limit": 10,
         },
+    )
+    end_time = time.time()
+    latency = end_time - start_time
+    print(
+        f"{ANSI['LLM_DEBUG_COLOUR']} Memory Storage Latency: {latency} {ANSI['ANSI_RESET']}"
     )
 
     return {}
