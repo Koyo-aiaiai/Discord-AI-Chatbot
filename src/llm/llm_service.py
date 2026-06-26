@@ -2,6 +2,8 @@ import asyncio
 import logging
 import time
 
+from langchain_core.runnables import RunnableConfig
+
 from constants import ANSI
 from core.abstract_service import AbstractService
 from core.bus import EventBus
@@ -36,6 +38,7 @@ class LLMService(AbstractService):
                     "retry_count": 0,
                     "parsed_messages": [],
                 },
+                config={"configurable": {"thread_id": "default"}},
             )
             end_time = time.time()
             latency = end_time - start_time

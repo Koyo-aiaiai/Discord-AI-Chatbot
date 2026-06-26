@@ -7,6 +7,7 @@ from typing import Literal
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import OpenAIEmbeddings
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.store.postgres import PostgresStore
 from langmem import (
@@ -36,15 +37,8 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-llm_factory = LLMFactory()
-personality_model = llm_factory.make_model(PERSONALITY_MODEL_PATH)
-memory_model = llm_factory.make_model(MEMORY_MODEL_PATH)
-print("\033[1;35m [ Azaria is now Online! ] \033[0m")
-
 _FALLBACK_MESSAGE = "I am going to fucking explode"
 EMBEDDINGS_DIM = 1536
-
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 
 def build_context(state: OverallState) -> OverallState:
@@ -55,9 +49,8 @@ def build_context(state: OverallState) -> OverallState:
 
 
 def retrieve_memory(state: OverallState) -> OverallState:
-    # TODO: This should eventually use semantic search
     user_message = state["messages"][-1].content
-    memory_context = memory_manager.search(
+    lr_memory_context = memory_manager.search(
         query=user_message,
         config={
             "configurable": {
@@ -67,20 +60,23 @@ def retrieve_memory(state: OverallState) -> OverallState:
             "limit": 20,
         },
     )
-    print(f"Memory context: {memory_context}")
-    return {"memory_context": memory_context}
+    # print(f"LR Memory context: {lr_memory_context}")
+    return {
+        "lr_memory_context": lr_memory_context,
+    }
 
 
 def generate_response(state: OverallState) -> OverallState:
     start_time = time.time()
     prompt = [SystemMessage(content=sys_prompt.strip())]
-    if state.get("memory_context"):
+    if state.get("lr_memory_context"):
         prompt.append(
             SystemMessage(
-                content=f"Relevant memories about {state['user_name']}:\n{state['memory_context']}"
+                content=f"Relevant facts and memories about {state['user_name']}:\n{state['lr_memory_context']}"
             )
         )
-    prompt.extend(state["messages"])
+    prompt.extend(state["messages"][-10:])
+    print(f"{ANSI['LLM_DEBUG_COLOUR']} Prompt: {prompt} {ANSI['ANSI_RESET']}")
     response = personality_model.invoke(prompt)
     end_time = time.time()
     latency = end_time - start_time
@@ -128,6 +124,7 @@ def validate_response(state: OverallState) -> OverallState:
         }
 
 
+# FIXME: Figure out what is causing the massive latency in this
 def store_memory(state: OverallState) -> OverallState:
     start_time = time.time()
     to_process = {
@@ -167,6 +164,13 @@ def route_after_validation(
     return "generate_response"
 
 
+llm_factory = LLMFactory()
+personality_model = llm_factory.make_model(PERSONALITY_MODEL_PATH)
+memory_model = llm_factory.make_model(MEMORY_MODEL_PATH)
+print("\033[1;35m [ Azaria is now Online! ] \033[0m")
+
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
 conn = Connection.connect(
     DATABASE_URL,
     autocommit=True,
@@ -174,13 +178,14 @@ conn = Connection.connect(
     row_factory=dict_row,
 )
 
+memory_checkpointer = InMemorySaver()
 memory_store = PostgresStore(
     conn,
     index={"dims": EMBEDDINGS_DIM, "embed": embeddings},
 )
 
 # NOTE: THIS IS FOR FIRST RUN TO SETUP POSTGRES VECTOR DB
-memory_store.setup()
+# memory_store.setup()
 
 
 memory_manager = create_memory_store_manager(
@@ -210,4 +215,4 @@ builder.add_conditional_edges(
     },
 )
 builder.add_edge("store_memory", END)
-graph = builder.compile(store=memory_store)
+graph = builder.compile(store=memory_store, checkpointer=memory_checkpointer)
