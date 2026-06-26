@@ -4,6 +4,7 @@ from typing import Literal
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_openai import OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
 from langgraph.store.postgres import PostgresStore
 from langmem import (
@@ -31,6 +32,9 @@ llm_factory = LLMFactory()
 model = llm_factory.make_model()
 
 _FALLBACK_MESSAGE = "I am going to fucking explode"
+EMBEDDINGS_DIM = 1536
+
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 
 def build_context(state: OverallState) -> OverallState:
@@ -148,7 +152,10 @@ conn = Connection.connect(
     row_factory=dict_row,
 )
 
-memory_store = PostgresStore(conn)
+memory_store = PostgresStore(
+    conn,
+    index={"dims": EMBEDDINGS_DIM, "embed": embeddings},
+)
 
 # NOTE: THIS IS FOR FIRST RUN TO SETUP POSTGRES VECTOR DB
 memory_store.setup()

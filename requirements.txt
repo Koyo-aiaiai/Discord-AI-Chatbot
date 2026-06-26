@@ -4,6 +4,7 @@ python-dotenv
 langgraph
 langgraph-checkpoint-postgres
 langchain-core
+langchain-voyageai
 lang-mem
 transformers
 torch
