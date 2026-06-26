@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, NotRequired, TypedDict
+from typing import Annotated, Dict, NotRequired, TypedDict
 
 from langgraph.graph import add_messages
 
@@ -13,4 +13,4 @@ class OverallState(TypedDict):
     messages: Annotated[list, add_messages]
     retry_count: NotRequired[int]
     parsed_messages: NotRequired[list[str]]
-    memory_context: NotRequired[str]
+    lr_memory_context: NotRequired[str]
