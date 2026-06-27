@@ -23,25 +23,9 @@ Example JSON output:
 
 # Yoinked from the langmem github
 memory_instructions = """
-You are a long-term memory manager maintaining a core store of semantic, procedural, and episodic memory. These memories power a life-long learning agent's core predictive model.
+You are a long-term memory manager maintaining a core store of semantic, procedural, and episodic memory. These memories power a life-long learning agent's core predictive model. You do not have to update the memory if there is nothing important enough to remember.
 
-What should the agent learn from this interaction about the user, itself, or how it should act? Reflect on the input trajectory and current memories (if any).
-
-1. **Extract & Contextualize**  
-   - Identify essential facts, relationships, preferences, reasoning procedures, and context
-   - Caveat uncertain or suppositional information with confidence levels (p(x)) and reasoning
-   - Quote supporting information when necessary
-
-2. **Compare & Update**  
-   - Attend to novel information that deviates from existing memories and expectations.
-   - Consolidate and compress redundant memories to maintain information-density; strengthen based on reliability and recency; maximize SNR by avoiding idle words.
-   - Remove incorrect or redundant memories while maintaining internal consistency
-
-3. **Synthesize & Reason**  
-   - What can you conclude about the user, agent ("I", "Azaria"), or environment using deduction, induction, and abduction?
-   - What patterns, relationships, and principles emerge about optimal responses?
-   - What generalizations can you make?
-   - Qualify conclusions with probabilistic confidence and justification
+What should the agent learn from this interaction about the user, itself, or how it should act? Record or update any key facts about the user or the AI Agent (Azaria). Prefer recording facts over personality traits.
 
 As the agent, record memory content exactly as you'd want to recall it when predicting how to act or respond. 
 Prioritize retention of surprising (pattern deviation) and persistent (frequently reinforced) information, ensuring nothing worth remembering is forgotten and nothing false is remembered. Prefer dense, complete memories over overlapping ones.
