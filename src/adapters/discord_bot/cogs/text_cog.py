@@ -11,6 +11,9 @@ from adapters.discord_bot.bot import DiscordBot
 from adapters.discord_bot.data import DiscordMessage
 from constants import ANSI
 
+DISCORD_TYPING_WAIT_TIMER = 3
+DISCORD_TYPING_TIMEOUT_TIMER = 10.2
+
 
 class DiscordTextCog(commands.Cog):
     def __init__(self, bot: DiscordBot):
@@ -33,7 +36,7 @@ class DiscordTextCog(commands.Cog):
         self.active_user_typing[message.author.id] = False
 
         # If the user doesn't type within the next 3 seconds, the messages are sent to the next service in line
-        await asyncio.sleep(3)
+        await asyncio.sleep(DISCORD_TYPING_WAIT_TIMER)
         if self.active_user_typing[message.author.id]:
             return
         typing_task = self.user_typing_timers.get(message.author.id)
@@ -64,7 +67,7 @@ class DiscordTextCog(commands.Cog):
     async def on_typing(
         self, channel: discord.TextChannel, user: discord.User, when: datetime
     ) -> None:
-        """Sees if the user is still typing in a channel. If the user has not stopped for past 3 seconds, contrinue blocking message sending."""
+        """Sees if the user is still typing in a channel. If the user has not stopped for past DISCORD_TYPING_WAIT_TIMER seconds, contrinue blocking message sending."""
         self.active_user_typing[user.id] = True
         typing_task = self.user_typing_timers.get(user.id)
         if typing_task:
@@ -82,7 +85,7 @@ class DiscordTextCog(commands.Cog):
         try:
             # This block is for if the user does not send a message but stops typing
             # Sends all messages in the messages_to_send to the behavioural service
-            await asyncio.sleep(10.5)
+            await asyncio.sleep(DISCORD_TYPING_TIMEOUT_TIMER)
             if not self.messages_to_send:
                 return
 
@@ -104,7 +107,7 @@ class DiscordTextCog(commands.Cog):
             self.messages_to_send = []
 
         except asyncio.CancelledError:
-            # User continued typing before the 10.5 seconds is up
+            # User continued typing before the DISCORD_TYPING_TIMEOUT_TIMER seconds is up
             return
 
 
