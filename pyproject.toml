@@ -18,7 +18,7 @@ dependencies = [
     "langmem",
     "langgraph-checkpoint-postgres",
     "psycopg2",
-    "langchain-voyageai"
+    "langchain-openai"
 ]
 
 [project.optional-dependencies]

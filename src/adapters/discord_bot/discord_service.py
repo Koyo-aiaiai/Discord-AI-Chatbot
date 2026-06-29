@@ -8,6 +8,7 @@ import discord
 from dotenv import load_dotenv
 
 from adapters.discord_bot.bot import DiscordBot
+from adapters.discord_bot.data import DiscordMessage
 from constants import ANSI
 from core.abstract_service import AbstractService
 from core.bus import EventBus
@@ -66,7 +67,7 @@ class DiscordService(AbstractService):
     def _record_ai_message(self, channel_id: str, now: datetime) -> None:
         self._get_channel_times(channel_id)["ai"] = now
 
-    async def handle_discord_message(self, message: discord.Message) -> None:
+    async def handle_discord_message(self, message: DiscordMessage) -> None:
         """Pack a Discord message as a UserMessage and publish it to the event bus."""
 
         now = message.created_at
