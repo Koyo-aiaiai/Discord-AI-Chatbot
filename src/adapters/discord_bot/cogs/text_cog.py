@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import datetime
 from typing import List
 
@@ -9,10 +10,11 @@ from discord.ext import commands
 
 from adapters.discord_bot.bot import DiscordBot
 from adapters.discord_bot.data import DiscordMessage
-from constants import ANSI
 
 DISCORD_TYPING_WAIT_TIMER = 3
 DISCORD_TYPING_TIMEOUT_TIMER = 10.2
+
+logger = logging.getLogger("adapter")
 
 
 class DiscordTextCog(commands.Cog):
