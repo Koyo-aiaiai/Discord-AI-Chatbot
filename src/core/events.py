@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Any, List
 
 from pydantic import BaseModel
 
@@ -52,7 +53,9 @@ class UserMessage(BaseModel):
     - metadata: The metadata of the message.
     """
 
+    # NOTE: It would be a lot more robust if content was a list of messages rather than just a single string
     content: str
+    ai_messages: List[Any]
     user_name: str
     metadata: MessageMetaData
 
