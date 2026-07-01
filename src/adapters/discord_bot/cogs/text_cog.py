@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime
-from typing import List
+from typing import Any, List
 
 import discord
 from discord.ext import commands
@@ -112,13 +112,12 @@ class DiscordTextCog(commands.Cog):
             # User continued typing before the DISCORD_TYPING_TIMEOUT_TIMER seconds is up
             return
 
-    async def get_ai_messages_batch(self, channel):
+    async def get_ai_messages_batch(self, channel) -> List[Any]:
+        """Retrieves most recent batch of AI messages. This is defined as messages what are sent without user sending something between the AI's messages.
+        Returns list of discord.Message (but listed as List[Any] since pydantic doesn't like things that can't be expressed as dictionaries)
+        """
         batches = []
 
-        # Iterate from newest to oldest
-        # iterate through all newest user messages without adding to batches
-        # iterate through all recent AI messages in the last block and add to batches
-        # upon seeing a user (not the bot) we break
         async for msg in channel.history(limit=30):
             if msg.author.id == self.bot.user.id:
                 batches.append(msg)

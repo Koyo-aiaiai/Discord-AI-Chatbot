@@ -78,6 +78,7 @@ class DiscordService(AbstractService):
 
         user_message = UserMessage(
             content=message.content,
+            ai_messages=message.ai_messages,
             user_name=str(message.author.name),
             metadata=self._build_user_metadata(channel_id, user_id, platform_type, now),
         )
