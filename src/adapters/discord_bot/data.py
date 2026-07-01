@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Union
+from typing import Any, List, Union
 
 import discord
 from pydantic import BaseModel, ConfigDict
@@ -15,4 +15,5 @@ class DiscordMessage(BaseModel):
     content: str
     author: Union[Any, discord.User]
     channel: Union[Any, discord.TextChannel]
+    ai_messages: List[Any]
     created_at: datetime

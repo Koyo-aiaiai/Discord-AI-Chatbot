@@ -7,12 +7,10 @@ from typing import TYPE_CHECKING
 import discord
 from discord.ext import commands
 
-from constants import ANSI
-
 if TYPE_CHECKING:
     from adapters.discord_bot.discord_service import DiscordService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("adapter")
 
 
 class DiscordBot(commands.Bot):
@@ -36,9 +34,7 @@ class DiscordBot(commands.Bot):
             try:
                 channel = await self.fetch_channel(int(channel_id))
             except discord.NotFound:
-                logger.error(
-                    f"{ANSI['PLATFORM_DEBUG_COLOUR']}Discord channel {channel_id} not found{ANSI['ANSI_RESET']}"
-                )
+                logger.error(f"Discord channel {channel_id} not found")
                 return
 
         if isinstance(channel, discord.DMChannel):

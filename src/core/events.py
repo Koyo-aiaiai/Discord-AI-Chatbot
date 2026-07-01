@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Any, List
 
 from pydantic import BaseModel
 
@@ -15,7 +15,7 @@ class MessageMetaData(BaseModel):
     - platform_type: The platform type of the message (ie. discord_text, instagram_text, etc.)
     - user_id: ID of the user
     - channel_id: ID of the channel the content is being sent to     # TODO: Perhaps maybe input and output channel ids in future?
-    - time_since_typing: Time since last typing event
+    - timestamp: timestamp of the last message
     - tslr_user_ai: Time between last user message to AI
     - tslr_ai_user: Time between last AI message to user
     - tslr_ai_ai: Time since last message from AI, ie. AI texting multiple times in same exchange
@@ -53,7 +53,9 @@ class UserMessage(BaseModel):
     - metadata: The metadata of the message.
     """
 
+    # NOTE: It would be a lot more robust if content was a list of messages rather than just a single string
     content: str
+    ai_messages: List[Any]
     user_name: str
     metadata: MessageMetaData
 

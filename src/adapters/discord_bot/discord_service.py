@@ -4,17 +4,15 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import discord
 from dotenv import load_dotenv
 
 from adapters.discord_bot.bot import DiscordBot
 from adapters.discord_bot.data import DiscordMessage
-from constants import ANSI
 from core.abstract_service import AbstractService
 from core.bus import EventBus
 from core.events import AIMessage, MessageMetaData, UserMessage
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("adapter")
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
@@ -80,6 +78,7 @@ class DiscordService(AbstractService):
 
         user_message = UserMessage(
             content=message.content,
+            ai_messages=message.ai_messages,
             user_name=str(message.author.name),
             metadata=self._build_user_metadata(channel_id, user_id, platform_type, now),
         )
@@ -88,9 +87,7 @@ class DiscordService(AbstractService):
         if self.bot is not None:
             self.bot.channels[channel_id] = message.channel
 
-        logger.info(
-            f"{ANSI['PLATFORM_DEBUG_COLOUR']}Publishing UserMessage from user {user_id}{ANSI['ANSI_RESET']}"
-        )
+        logger.info(f"Publishing UserMessage from user {user_id}")
         await self.bus.publish(user_message)
 
     async def _process_ai_messages(self) -> None:
@@ -103,9 +100,7 @@ class DiscordService(AbstractService):
                 continue
 
             channel_id = ai_message.metadata.channel_id
-            logger.info(
-                f"{ANSI['PLATFORM_DEBUG_COLOUR']}Sending AIMessage to channel {channel_id}{ANSI['ANSI_RESET']}"
-            )
+            logger.info(f"Sending AIMessage to channel {channel_id}")
             await self.bot.send_to_channel(ai_message.content, channel_id)
             self._record_ai_message(channel_id, datetime.now(timezone.utc))
 

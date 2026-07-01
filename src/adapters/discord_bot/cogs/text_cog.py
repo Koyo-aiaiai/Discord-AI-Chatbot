@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import datetime
-from typing import List
+from typing import Any, List
 
 import discord
 from discord.ext import commands
 
 from adapters.discord_bot.bot import DiscordBot
 from adapters.discord_bot.data import DiscordMessage
-from constants import ANSI
 
 DISCORD_TYPING_WAIT_TIMER = 3
 DISCORD_TYPING_TIMEOUT_TIMER = 10.2
+
+logger = logging.getLogger("adapter")
 
 
 class DiscordTextCog(commands.Cog):
@@ -50,14 +52,13 @@ class DiscordTextCog(commands.Cog):
         for message in self.messages_to_send:
             content += f"{message.content}\n"
 
-        print(
-            f"{ANSI['PLATFORM_DEBUG_COLOUR']}Sending Messages: {content}{ANSI['ANSI_RESET']}"
-        )
+        ai_messages = await self.get_ai_messages_batch(message.channel)
 
         message = DiscordMessage(
             content=content,
             author=message.author,
             channel=message.channel,
+            ai_messages=ai_messages,
             created_at=datetime.now(),
         )
         await self.bot.service.handle_discord_message(message)
@@ -73,7 +74,7 @@ class DiscordTextCog(commands.Cog):
         if typing_task:
             typing_task.cancel()
         self.user_typing_timers[user.id] = asyncio.create_task(
-            self._check_typing_no_message_sent(user)
+            self._check_typing_no_message_sent(user, channel)
         )
 
         # NOTE: This currently does not support conversations on multiple channels at the same time
@@ -81,7 +82,9 @@ class DiscordTextCog(commands.Cog):
             return
 
     # TODO: Currently the user parameter does nothing, in future this should probably support multiple users
-    async def _check_typing_no_message_sent(self, user):
+    async def _check_typing_no_message_sent(
+        self, user: discord.User, channel: discord.TextChannel
+    ):
         try:
             # This block is for if the user does not send a message but stops typing
             # Sends all messages in the messages_to_send to the behavioural service
@@ -93,14 +96,13 @@ class DiscordTextCog(commands.Cog):
             for message in self.messages_to_send:
                 content += f"{message.content}\n"
 
-            print(
-                f"{ANSI['PLATFORM_DEBUG_COLOUR']}Sending Messages: {content}{ANSI['ANSI_RESET']}"
-            )
+            ai_messages = await self.get_ai_messages_batch(channel)
 
             message = DiscordMessage(
                 content=content,
                 author=message.author,
                 channel=message.channel,
+                ai_messages=ai_messages,
                 created_at=datetime.now(),
             )
             await self.bot.service.handle_discord_message(message)
@@ -109,6 +111,23 @@ class DiscordTextCog(commands.Cog):
         except asyncio.CancelledError:
             # User continued typing before the DISCORD_TYPING_TIMEOUT_TIMER seconds is up
             return
+
+    async def get_ai_messages_batch(self, channel) -> List[Any]:
+        """Retrieves most recent batch of AI messages. This is defined as messages what are sent without user sending something between the AI's messages.
+        Returns list of discord.Message (but listed as List[Any] since pydantic doesn't like things that can't be expressed as dictionaries)
+        """
+        batches = []
+
+        async for msg in channel.history(limit=30):
+            if msg.author.id == self.bot.user.id:
+                batches.append(msg)
+            elif not batches:
+                continue
+            else:
+                break
+
+        batches.reverse()
+        return batches
 
 
 async def setup(bot: DiscordBot) -> None:

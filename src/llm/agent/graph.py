@@ -16,7 +16,6 @@ from langmem import (
 from psycopg import Connection
 from psycopg.rows import dict_row
 
-from constants import ANSI
 from llm.agent.llm_factory import LLMFactory
 from llm.agent.prompts import memory_instructions, sys_prompt
 from llm.agent.states import OverallState
@@ -35,7 +34,7 @@ MEMORY_MODEL_PATH = os.path.join(
 
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("llm")
 
 _FALLBACK_MESSAGE = "I am going to fucking explode"
 EMBEDDINGS_DIM = 1536
@@ -76,13 +75,11 @@ def generate_response(state: OverallState) -> OverallState:
             )
         )
     prompt.extend(state["messages"][-10:])
-    print(f"{ANSI['LLM_DEBUG_COLOUR']} Prompt: {prompt} {ANSI['ANSI_RESET']}")
+    logger.info(f"Prompt: {prompt}")
     response = personality_model.invoke(prompt)
     end_time = time.time()
     latency = end_time - start_time
-    print(
-        f"{ANSI['LLM_DEBUG_COLOUR']} Model Generation Latency: {latency} {ANSI['ANSI_RESET']}"
-    )
+    logger.info(f"Model Generation Latency: {latency}")
     return {
         "metadata": state["metadata"],
         "messages": [response],
@@ -99,7 +96,7 @@ def validate_response(state: OverallState) -> OverallState:
         retry_count = state.get("retry_count", 0) + 1
         if retry_count <= MAX_RETRIES:
             logger.warning(
-                f"{ANSI['LLM_DEBUG_COLOUR']}LLM output validation failed (attempt {retry_count}/{MAX_RETRIES + 1}): {exc} \n\n Content: {last_message.content}{ANSI['ANSI_RESET']}"
+                f"LLM output validation failed (attempt {retry_count}/{MAX_RETRIES + 1}): {exc} \n\n Content: {last_message.content}"
             )
             return {
                 "retry_count": retry_count,
@@ -115,8 +112,7 @@ def validate_response(state: OverallState) -> OverallState:
             }
 
         logger.error(
-            "LLM output validation failed after %d attempts, using fallback message",
-            retry_count,
+            f"LLM output validation failed after {retry_count} attempts, using fallback message"
         )
         return {
             "retry_count": retry_count,
@@ -149,9 +145,7 @@ def store_memory(state: OverallState) -> OverallState:
     )
     end_time = time.time()
     latency = end_time - start_time
-    print(
-        f"{ANSI['LLM_DEBUG_COLOUR']} Memory Storage Latency: {latency} {ANSI['ANSI_RESET']}"
-    )
+    logger.info(f"Memory Storage Latency: {latency}")
 
     return {}
 

@@ -1,10 +1,12 @@
 import json
+import logging
 import os
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from constants import ANSI
 from llm.agent.huggingface_model import HuggingFaceModel
+
+logger = logging.getLogger("llm")
 
 
 class LLMFactory:
@@ -26,8 +28,10 @@ class LLMFactory:
         model_type = config["model_type"]
         model_name = config["model_name"]
         model_base = config["base_model_name"]
+        path_type = config["path_type"]
 
-        model_name = self._resolve_path(model_name)
+        if path_type == "local":
+            model_name = self._resolve_path(model_name)
 
         match model_type:
             case "huggingface":
@@ -36,6 +40,5 @@ class LLMFactory:
                     base_model_name=model_base,
                 )
             case _:
-                raise ValueError(
-                    f"{ANSI['LLM_DEBUG_COLOUR']}Unspported model type: {self.model_type}{ANSI['ANSI_RESET']}"
-                )
+                logger.error(f"Unspported model type: {model_type}")
+                raise ValueError(f"Unspported model type: {model_type}")

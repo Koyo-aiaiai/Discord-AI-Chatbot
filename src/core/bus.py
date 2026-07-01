@@ -1,9 +1,8 @@
 import asyncio
 import logging
 
-from constants import ANSI
+logger = logging.getLogger("core")
 
-logger = logging.getLogger(__name__)
 
 class EventBus:
     def __init__(self):
@@ -13,11 +12,11 @@ class EventBus:
         self.subscribers.setdefault(event_type, []).append(queue)
 
     async def publish(self, event):
-        logger.debug(f"{ANSI['CORE_DEBUG_COLOUR']}Publishing event: {event}{ANSI['ANSI_RESET']}")
+        logger.debug(f"Publishing event: {event}")
         event_type = type(event)
 
         if event_type not in self.subscribers:
-            logger.warning(f"{ANSI['CORE_DEBUG_COLOUR']}No subscribers for event type: {event_type}{ANSI['ANSI_RESET']}")
+            logger.warning(f"No subscribers for event type: {event_type}")
             return
 
         for queue in self.subscribers.get(event_type, []):

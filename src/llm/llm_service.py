@@ -2,16 +2,13 @@ import asyncio
 import logging
 import time
 
-from langchain_core.runnables import RunnableConfig
-
-from constants import ANSI
 from core.abstract_service import AbstractService
 from core.bus import EventBus
 from core.events import AIMessage, LLMInputMessage
 from llm.agent.graph import graph
 from llm.agent.utils import llm_input_to_langchain
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("llm")
 
 
 class LLMService(AbstractService):
@@ -42,9 +39,7 @@ class LLMService(AbstractService):
             )
             end_time = time.time()
             latency = end_time - start_time
-            print(
-                f"{ANSI['LLM_DEBUG_COLOUR']} Total AI Agent Latency: {latency} {ANSI['ANSI_RESET']}"
-            )
+            logger.info(f"Total AI Agent Latency: {latency}")
 
             parsed_messages = response.get("parsed_messages", [])
             if not parsed_messages:
