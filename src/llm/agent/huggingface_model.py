@@ -112,7 +112,7 @@ class HuggingFaceModel(BaseChatModel):
         )
 
         self._model = AutoModelForCausalLM.from_pretrained(
-            self._base_model_name,
+            self._model_path,
             quantization_config=quantization_config,
             device_map="auto",
         )

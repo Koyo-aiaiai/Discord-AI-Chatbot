@@ -1,5 +1,6 @@
 {
     "model_type": "huggingface",
     "model_name": "agent/model/model_transformers",
-    "base_model_name": "Qwen/Qwen3-8B"
+    "base_model_name": "Qwen/Qwen3-8B",
+    "path_type": "local"
 }

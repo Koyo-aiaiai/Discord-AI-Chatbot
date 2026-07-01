@@ -28,8 +28,10 @@ class LLMFactory:
         model_type = config["model_type"]
         model_name = config["model_name"]
         model_base = config["base_model_name"]
+        path_type = config["path_type"]
 
-        model_name = self._resolve_path(model_name)
+        if path_type == "local":
+            model_name = self._resolve_path(model_name)
 
         match model_type:
             case "huggingface":
