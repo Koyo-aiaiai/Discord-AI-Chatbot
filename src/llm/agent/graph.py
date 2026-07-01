@@ -34,7 +34,7 @@ MEMORY_MODEL_PATH = os.path.join(
 
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("llm")
 
 _FALLBACK_MESSAGE = "I am going to fucking explode"
 EMBEDDINGS_DIM = 1536

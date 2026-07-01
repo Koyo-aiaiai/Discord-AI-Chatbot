@@ -4,12 +4,10 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import discord
 from dotenv import load_dotenv
 
 from adapters.discord_bot.bot import DiscordBot
 from adapters.discord_bot.data import DiscordMessage
-from constants import ANSI
 from core.abstract_service import AbstractService
 from core.bus import EventBus
 from core.events import AIMessage, MessageMetaData, UserMessage
